@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical">
+
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="20dp"
+        android:background="#eeeeee">
+
+    <Spinner
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/eClass"
+        android:hint="Sub-Type"
+        android:entries="@array/soniaclass" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/eName"
+        android:hint="Name of the Activity"
+        android:textSize="30dp"
+        android:textColor="#ff8080" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/eLocation"
+        android:hint="Floor/Room Number"
+        android:textColor="#ff9933" />
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/eTag1"
+            android:hint="Tag 1"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="1"
+            android:textColor="#ace600" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/eTag2"
+            android:hint="Tag 2"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="1"
+            android:textColor="#ace600" />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/eTag3"
+            android:hint="Tag 3"
+            android:layout_gravity="center_horizontal"
+            android:layout_weight="1"
+            android:textColor="#ace600" />
+    </LinearLayout>
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Start Time"
+        android:id="@+id/eTimeStart"
+        android:inputType="datetime"
+        android:textColor="#00e68a" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="End Time"
+        android:id="@+id/eTimeEnd"
+        android:inputType="datetime"
+        android:textColor="#00b8e6" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textMultiLine"
+        android:ems="10"
+        android:hint="Details:\n e.g.free of charge"
+        android:id="@+id/eDescription"
+        android:textColor="#8800cc" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="20dp"
+            android:layout_gravity="center_horizontal" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Generate"
+            android:id="@+id/btnDone"
+            android:layout_gravity="center_horizontal"
+            android:background="#ffffff"
+            android:onClick="open_drag" />
+
+    </LinearLayout>
+
+
+</LinearLayout>

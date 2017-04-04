@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">MyMap</string>
+    <string name="google_maps_key">AIzaSyDXvM1IZiuVoNQCgSB83K3Kvp0oHbEnEEk</string>
+    <string-array name="soniaclass">
+        <item>Error</item>
+        <item>Bug</item>
+        <item>Sonia is crying</item>
+        <item>Stop</item>
+    </string-array>
+    <string name="ip_file_name">ip_add.txt</string>
+</resources>

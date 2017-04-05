@@ -1,4 +1,4 @@
-	var app = require('express')();
+    var app = require('express')();
 	var http = require('http').Server(app);
 	var io = require('socket.io')(http);
 	var mongoose = require('mongoose');
@@ -18,7 +18,7 @@
 	    name: String,
 	    location: String,
 	    latitude: Number,
-	    longtitude: Number,
+	    longitude: Number,
 	    tags: String,
 	    starttime: {type: Date, default: Date.now},
 	    endtime: {type: Date, default: Date.now},
@@ -43,7 +43,7 @@
 	  });
 
 	  socket.on('download', function(data, callback){
-	    actModel.find({longtitude: {$gt: data.longtitude, $lt: data.longtitude+10}, 
+	    actModel.find({longtitude: {$gt: data.longitude, $lt: data.longitude+10}, 
 	     	            latitude: {$gt: data.latitude, $lt: data.latitude+10}}, 
 	     	            function(err, docs){
 	     	              if (err) throw err;

@@ -19,11 +19,11 @@
     <form action="">
       <input id="m" autocomplete="off" /><button>Send</button>
     </form>
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="http://localhost:1234/socket.io/socket.io.js"></script>
     <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
     <script>
       $(function () {
-        var socket = io.connect('http://localhost:3000');
+        var socket = io.connect('http://localhost:1234');
         $('form').submit(function(){
           socket.emit('upload', {type: 'play', class: 1});
           $('#m').val('');

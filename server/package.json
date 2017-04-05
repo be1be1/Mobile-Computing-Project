@@ -9,6 +9,8 @@
 		"socket.io": "latest",
 		"jsonfile": "latest",
 		"socket.io": "latest",
-		"xmlhttprequest": "latest"
+		"http": "latest",
+		"xmlhttprequest": "latest",
+		"mongoose": "latest"
 	}
 }

@@ -9,8 +9,14 @@
 		"socket.io": "latest",
 		"jsonfile": "latest",
 		"socket.io": "latest",
+<<<<<<< HEAD
 		"xmlhttprequest": "latest",
 		"mongoose":"latest",
 		"http":"latest"
+=======
+		"http": "latest",
+		"xmlhttprequest": "latest",
+		"mongoose": "latest"
+>>>>>>> origin/master
 	}
 }

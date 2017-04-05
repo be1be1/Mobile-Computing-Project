@@ -1,24 +1,14 @@
 {
-	"name": "Mobicom_Server",
+	"name": "mobile_computing_server",
 	"version": "0.0.1",
-	"author": "Beibei Zhang",
-	"description": "Server program for the connection between MobiServer to MobiApplication",
-	"keywords":["node.js","javascript"],
-	"repository": {
-		"type": "git",
-		"url": ""
-	},
-	"license":"MIT",
-	"contributors":[{"name":"Beibei Zhang","email":"beibei.post@gmail.com"}],
-	"scripts": {
-		"start": "node server.js"
-	},
+	"author": "Benjamin Zhang",
+	"description": "Server part of mobile computing project",
+	"keywords": ["node.js", "socket.io", "javascript"],
+	"private": "true",
 	"dependencies": {
+		"socket.io": "latest",
 		"jsonfile": "latest",
 		"socket.io": "latest",
 		"xmlhttprequest": "latest"
 	}
 }
-
-
-

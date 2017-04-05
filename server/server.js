@@ -1,58 +1,40 @@
-var fs = require('fs');
-var io = require('socket.io').listen(1234);
-var spawn = require('child_process').spawn;
-var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
-var jsonfile = require('jsonfile');
-var base64Img;
+var io = require('socket.io').listen('1234');
+var mongoose = require('mongoose');
 
-console.log('Your server has started successfully!');
+console.log('Server Start.');
 
-io.on('connection', function (socket) {
+// mongoose.connect('mongodb://localhost/activity', function(err){
+//     if (err) {
+//     	console.log(err);
+//     } else {
+//     	console.log('Connected to mongodb');
+//     }
+// });
 
-  socket.on('queryImageDataString', function(info) {
-    // Save img to local storage
-    var img = 'data:image/jpeg;base64,' + info.buffer;
-    var data = img.replace(/^data:image\/\w+;base64,/, "");
-    var buf = new Buffer(data, 'base64');
-    var imgNameStamp = "" + Date.now();
-    var imgName = "image_" + imgNameStamp + ".jpg";
-    var imgDirectory = "queryImages/" + imgName;
+// var actSchema = mongoose.Schema({
+//     type: String,
+//     class: Number,
+//     name: String,
+//     location: String,
+//     latitude: Number,
+//     longtitude: Number,
+//     tags: String,
+//     starttime: {type: Date, default: Date.now},
+//     endtime: {type: Date, default: Date.now},
+//     description: String
+// });
 
-    fs.writeFile(imgDirectory, buf);
-    console.log('Image Saved as: ' + imgName);
+// var actModel = mongoose.model('actData', actSchema);
 
-    // Run SmartCity_OpenCV to do recognition
-    var recognition = spawn('./EyeDetector', ['./queryImages/'+imgName]);
+io.on('connection', function(socket){
+	console.log('wait for call');
+	socket.on('upload', function(data, callback){
+		console.log('Uploading');
+		console.log(data.type);
+	});
 
-    recognition.stdout.on('data', (data) => {
-      var imgInfo = `${data}`;
-      var newImgInfo = imgInfo.split(/\r?\n/);
-      console.log('First element:'+newImgInfo[0]);
-
-      var attachment = newImgInfo[2];
-      console.log('Trying to transfer img');
-      fs.readFile(attachment, function read(err, data) {
-        if(err) {
-          throw err;
-        }
-        base64Img = new Buffer(data, 'binary').toString('base64');
-      });
-      console.log('Transfering your img:'+attachment);
-
-      var resultJson = {
-        'is_eye': newImgInfo[0],
-        'score': newImgInfo[1],
-        'image': base64Img
-        };
-      console.log(base64Img);
-      socket.emit('message', {'result': resultJson});
-    });
-
-    recognition.stderr.on('data', (data) => {
-      console.log(`stderr: ${data}`);
-    });
-    recognition.on('close', (code) => {
-      console.log(`process exited with code ${code}`);
-    });
-  });
+	socket.on('download', function(data, callback){
+		console.log('Downloading');
+		console.log(data.type);
+	});
 });

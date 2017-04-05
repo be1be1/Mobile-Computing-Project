@@ -25,7 +25,7 @@
       $(function () {
         var socket = io.connect('http://localhost:3000');
         $('form').submit(function(){
-          socket.emit('chat message', $('#m').val());
+          socket.emit('upload', {type: 'play', class: 1});
           $('#m').val('');
           return false;
         });

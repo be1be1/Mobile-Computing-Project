@@ -40,16 +40,17 @@ public class SettingActivity extends AppCompatActivity {
             ps.println(data);
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                    ps.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+        }
+        if (out != null) {
+            try {
+                out.close();
+                ps.close();
+                tPrint("Saved: " + data);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
+
     }
 
     public void ip_load(View view){
@@ -66,7 +67,17 @@ public class SettingActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (in != null) {
+            try {
+                in.close();
+                s.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         ip_add = sb.toString();
+        eTxt.setText(ip_add);
+        tPrint("Loaded: " + ip_add);
     }
 
     public void open_menu(View view){

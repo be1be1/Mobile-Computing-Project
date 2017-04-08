@@ -31,9 +31,26 @@ public class InputActivity extends AppCompatActivity {
         setContentView(R.layout.share_input);
 
         sub_type_str = new String[18];
-        for(int i=0;i<18;i++){
-            sub_type_str[i] = "cry"+i;
-        }
+
+        sub_type_str[0] = "Workshop";
+        sub_type_str[1] = "Music";
+        sub_type_str[2] = "Recruiment Talk";
+        sub_type_str[3] = "Demonstration";
+        sub_type_str[4] = "Free Talk";
+        sub_type_str[5] = "Curry";
+        sub_type_str[6] = "Fish";
+        sub_type_str[7] = "Fastfood";
+        sub_type_str[8] = "Meat";
+        sub_type_str[9] = "Sushi";
+        sub_type_str[10] = "Roast";
+        sub_type_str[11] = "Dessert";
+        sub_type_str[12] = "Flght";
+        sub_type_str[13] = "Ground";
+        sub_type_str[14] = "Rock";
+        sub_type_str[15] = "Poison";
+        sub_type_str[16] = "Dragon";
+        sub_type_str[17] = "Evil";
+
 
         Bundle bundle = this.getIntent().getExtras();
         type = bundle.getInt("type");

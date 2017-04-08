@@ -33,12 +33,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
-import java.net.URISyntaxException;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Scanner;
 
-import io.socket.client.IO;
-import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
+import io.socket.IOAcknowledge;
+import io.socket.IOCallback;
+import io.socket.SocketIO;
+import io.socket.SocketIOException;
+
 
 public class MapActivity extends AppCompatActivity
         implements OnMapReadyCallback {
@@ -76,7 +79,8 @@ public class MapActivity extends AppCompatActivity
     private String FILE_NAME = null;
     private String ip_add;
 
-    private Socket mSocket;
+    SocketIO socket = null;
+    private boolean display_update = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,7 +100,7 @@ public class MapActivity extends AppCompatActivity
     }
 
     private void ip_load(){
-
+        FILE_NAME = getResources().getString(R.string.ip_file_name);
         FileInputStream in = null;
         Scanner s = null;
         StringBuffer sb = new StringBuffer();
@@ -109,17 +113,58 @@ public class MapActivity extends AppCompatActivity
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (in != null) {
+            try {
+                in.close();
+                s.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         ip_add = sb.toString();
-        tPrint(ip_add);
+        tPrint("Loaded: " + ip_add);
 
+        String host = ip_add;//"http://192.168.56.1:1234";
         try {
-            mSocket = IO.socket(ip_add);
+            socket = new SocketIO(host);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
 
-            mSocket.on("new_data", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
+        socket.connect(new IOCallback() {
+            @Override
+            public void onMessage(JSONObject json, IOAcknowledge ack) {
+                tPrint("Server said(JSON): " + json);
+            }
+
+            @Override
+            public void onMessage(String data, IOAcknowledge ack) {
+                tPrint("Server said(Str): " + data);
+            }
+
+            @Override
+            public void onError(SocketIOException socketIOException) {
+                tPrint("an Error occured");
+                socketIOException.printStackTrace();
+            }
+
+            @Override
+            public void onDisconnect() {
+                System.out.println("Connection terminated.");
+            }
+
+            @Override
+            public void onConnect() {
+                tPrint("Connection established");
+            }
+
+            @Override
+            public void on(String event, IOAcknowledge ack, Object... args) {
+                tPrint("Server triggered event '" + event + "'");
+                if(event.compareTo("download_data")==0){
                     JSONObject obj = (JSONObject)args[0];
                     try {
+
                         num_result = obj.getInt("num_result");
                         JSONArray datas = obj.getJSONArray("result_data");
                         JSONObject tempd;
@@ -127,27 +172,22 @@ public class MapActivity extends AppCompatActivity
                         for(int i=0;i<num_result;i++){
                             tempd = (JSONObject) datas.get(i);
                             l_subtype[i] = tempd.getInt("sub_type");
-
                             l_name[i] = tempd.getString("name");
                             l_location[i] = tempd.getString("location");
                             l_description[i] = tempd.getString("description");
                             l_tags[i] = tempd.getString("tags");
-
                             l_lat[i] = tempd.getDouble("m_lat");
                             l_lon[i] = tempd.getDouble("m_lon");
                         }
-
-                        displayMarkers();
                     } catch (JSONException e) {
-                        e.printStackTrace();
-                        Toast.makeText(getApplicationContext(), "Failed",
-                                Toast.LENGTH_LONG).show();
+                        System.out.println("Mal Result");
+                        num_result = 0;
                     }
+                    System.out.println(num_result);
+                    display_update = true;
                 }
-            });
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-        }
+            }
+        });
     }
 
     private void data_init(){
@@ -209,6 +249,12 @@ public class MapActivity extends AppCompatActivity
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+
+                            if(display_update){
+                                display_update = false;
+                                displayMarkers();
+                            }
+
                             double cur_lat,cur_lon;
                             if(mPos==null) return;
                             cur_lat = mPos.getPosition().latitude;
@@ -219,7 +265,7 @@ public class MapActivity extends AppCompatActivity
                             dif_lon = tar_lon-cur_lon;
                             if(dif_lat<5E-5&&dif_lat>-5E-5
                                     &&dif_lon<5E-5&&dif_lon>-5E-5){
-                                tPrint("stop");
+                                //tPrint("stop");
                                 if(pic_num!=0){
                                     pic_num = 0;
                                     mPos.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.ion_1));
@@ -363,25 +409,22 @@ public class MapActivity extends AppCompatActivity
         pre_lat = tar_lat;
         Toast.makeText(getApplicationContext(), "Hunting",
                 Toast.LENGTH_LONG).show();
-
-        JSONObject obj = new JSONObject();
-        try {
-            obj.put("type", type);
-            obj.put("tar_lat", tar_lat);
-            obj.put("tar_lon", tar_lon);
-
-            mSocket.emit("new_request", obj);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-
         // type, tar_lat, tar_lon
 
         // name,location,tags,description
         // lat,lon
         // subtype
 
+        JSONObject obj = new JSONObject();
+        try {
+            obj.put("type", type);
+            obj.put("tar_lat", pre_lat);
+            obj.put("tar_lon", pre_lon);
+
+            socket.emit("download", obj);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -434,7 +477,7 @@ public class MapActivity extends AppCompatActivity
                 if(download_per>=download_fre){
                     double t1 = tar_lat-pre_lat;
                     double t2 = tar_lon-pre_lon;
-                    if(Math.abs(t1)+Math.abs(t2)>1e-3) {
+                    if(Math.abs(t1)+Math.abs(t2)>1e-4) {
                         download_records(cur_type);
                     }
                     download_per = 0;

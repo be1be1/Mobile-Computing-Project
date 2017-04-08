@@ -27,12 +27,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
-import java.net.URISyntaxException;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Scanner;
 
-import io.socket.client.IO;
-import io.socket.client.Socket;
-import io.socket.emitter.Emitter;
+import io.socket.IOAcknowledge;
+import io.socket.IOCallback;
+import io.socket.SocketIO;
+import io.socket.SocketIOException;
+
 
 public class DragActivity extends AppCompatActivity
         implements OnMapReadyCallback {
@@ -52,7 +55,7 @@ public class DragActivity extends AppCompatActivity
     private String FILE_NAME = null;
     private String ip_add;
 
-    private Socket mSocket;
+    SocketIO socket = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,7 +105,7 @@ public class DragActivity extends AppCompatActivity
     }
 
     private void ip_load(){
-
+        FILE_NAME = getResources().getString(R.string.ip_file_name);
         FileInputStream in = null;
         Scanner s = null;
         StringBuffer sb = new StringBuffer();
@@ -115,40 +118,70 @@ public class DragActivity extends AppCompatActivity
         } catch (Exception e) {
             e.printStackTrace();
         }
+        if (in != null) {
+            try {
+                in.close();
+                s.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         ip_add = sb.toString();
-        tPrint(ip_add);
+        tPrint("Loaded: " + ip_add);
 
+        String host = ip_add;//"http://192.168.56.1:1234";
         try {
-            mSocket = IO.socket(ip_add);
-            // Receiving an object
-            mSocket.on("new_result", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    JSONObject obj = (JSONObject)args[0];
-                    try {
-                        boolean up_result = obj.getBoolean("up_result");
-
-                        if(up_result==true) {
-                            Toast.makeText(getApplicationContext(), "Succeed",
-                                    Toast.LENGTH_LONG).show();
-
-                            Intent intent = new Intent(DragActivity.this, MainMenu.class);
-                            startActivity(intent);
-                            finish();
-                        }else{
-                            Toast.makeText(getApplicationContext(), "Failed",
-                                    Toast.LENGTH_LONG).show();
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        Toast.makeText(getApplicationContext(), "Failed",
-                                Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-        } catch (URISyntaxException e) {
+            socket = new SocketIO(host);
+        } catch (MalformedURLException e) {
             e.printStackTrace();
         }
+
+        socket.connect(new IOCallback() {
+            @Override
+            public void onMessage(JSONObject json, IOAcknowledge ack) {
+               tPrint("Server said(JSON): " + json);
+            }
+
+            @Override
+            public void onMessage(String data, IOAcknowledge ack) {
+                tPrint("Server said(Str): " + data);
+            }
+
+            @Override
+            public void onError(SocketIOException socketIOException) {
+                tPrint("an Error occured");
+                socketIOException.printStackTrace();
+            }
+
+            @Override
+            public void onDisconnect() {
+                System.out.println("Connection terminated.");
+            }
+
+            @Override
+            public void onConnect() {
+                tPrint("Connection established");
+            }
+
+            @Override
+            public void on(String event, IOAcknowledge ack, Object... args) {
+                tPrint("Server triggered event '" + event + "'");
+                if (event.compareTo("upload_result") == 0) {
+                    JSONObject obj = (JSONObject) args[0];
+                    Boolean up_result;
+                    try {
+                        up_result = obj.getBoolean("result");
+                    } catch (JSONException e) {
+                        tPrint("Mal Result");
+                        up_result = false;
+                    }
+                    tPrint("Upload Result: "+up_result);
+                    if(up_result){
+                        quit_record(null);
+                    }
+                }
+            }
+        });
     }
 
     @Override
@@ -260,17 +293,9 @@ public class DragActivity extends AppCompatActivity
         }
     };
 
-    private boolean upload_record(){
-
-//        type = bundle.getInt("type");
-//        sub_type = bundle.getInt("sub_type");
-//        stime = bundle.getLong("s_time");
-//        etime = bundle.getLong("e_time");
-//        name = bundle.getString("name");
-//        description = bundle.getString("description");
-//        tags = bundle.getString("tags");
-//        location = bundle.getString("description");
-//        m_lat,m_lon
+    public void share_record(View view){
+        Toast.makeText(getApplicationContext(), "Uploading Records",
+                Toast.LENGTH_LONG).show();
 
         JSONObject obj = new JSONObject();
         try {
@@ -285,28 +310,17 @@ public class DragActivity extends AppCompatActivity
             obj.put("m_lat", m_lat);
             obj.put("m_lon", m_lon);
 
-            mSocket.emit("new_record", obj);
+            socket.emit("upload", obj);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
-
-
-
-        return true;
-    }
-
-    public void share_record(View view){
-        Toast.makeText(getApplicationContext(), "Uploading Records",
-                Toast.LENGTH_LONG).show();
-
-
-
-        boolean up_result = upload_record();
-
     }
 
     public void quit_record(View view){
+
+        tPrint("not die yet");
+        socket.disconnect();
         Intent intent = new Intent(DragActivity.this, MainMenu.class);
         startActivity(intent);
         finish();

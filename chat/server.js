@@ -1,9 +1,6 @@
-
-    var app = require('express')();
-	var http = require('http').Server(app);
-	var io = require('socket.io')(http);
+    var io = require('socket.io').listen(1234);
+    var jsonfile = require('jsonfile');
 	var mongoose = require('mongoose');
-	var port = process.env.PORT || 1234;
 
 	mongoose.connect('mongodb://localhost/activity', function(err){
 	    if (err) {
@@ -14,40 +11,46 @@
 	});
 
 	var actSchema = mongoose.Schema({
+		type: String,
 	    tags: String,
 	    sub_type: Number,
 	    m_lat: Number,
 	    location: String,
 	    m_lon: Number,
 	    description: String,
-	    name: String
+	    name: String,
+	    stime: Number,
+	    etime: Number,
 	});
 
 	var actModel = mongoose.model('ActData', actSchema);
-
-	app.get('/', function(req, res){
-	  res.sendFile(__dirname + '/index.html');
-	});
 
 	io.sockets.on('connection', function(socket){
 	  console.log('Connected! New user comes in.');
 
 	  socket.on('upload', function(data, callback){
-	  	console.log(data.type);
-	  	var newAct = new actModel({type:data.type, class:data.class});
+	  	console.log(data);
+	  	var newAct = new actModel({type:data.type, tags:data.tags, sub_type:data.sub_type, m_lat:data.m_lat, location:data.location, m_lon:data.m_lon,
+	  	                           description: data.description, name: data.name, stime: data.stime, etime: data.etime});
 	  	newAct.save(function(err){
 	  		 var result_value = {"result": true};
 	  		 if(err) {
 	  		 	result_value = {"result": false};
 	  		 	throw err;
 	  		 }
-	  		 io.emit('upload_result', result_value);
+
+	  		 socket.emit('upload_result', result_value);
 	  	});
 	  });
 
 	  socket.on('download', function(data, callback){
-	    actModel.find({longtitude: {$gt: data.longitude-1e-3, $lt: data.longitude+1e-3}, 
-	     	            latitude: {$gt: data.latitude-1e-3, $lt: data.latitude+1e-3}}, 
+	    actModel.find({m_lon: {$gt: data.m_lon-1e-3, $lt: data.m_lon+1e-3}, 
+	     	           m_lat: {$gt: data.m_lat-1e-3, $lt: data.m_lat+1e-3},
+	     	           type: data.type,
+	     	           stime: {$lt: data.ntime},
+	     	           etime: {$gt: data.ntime}
+	     	           }, 
+
 	     	            function(err, docs){
 	     	              if (err) {
 	     	              	var result_value = {"num_result": 0};
@@ -55,13 +58,11 @@
 	     	              	throw err;
 	     	              } else {
 	     	                console.log('sending documents');
-	     	                socket.emit('download_data', docs);
+	     	                var kitty = {"num_result":1,
+	  						"result_data":docs};
+	     	                socket.emit('download_data', kitty);
 	     	              }
 	                    });
 	  });
 
-	});
-
-	http.listen(port, function(){
-	  console.log('listening on *:' + port);
 	});

@@ -1,9 +1,9 @@
-<<<<<<< HEAD
+
     var app = require('express')();
 	var http = require('http').Server(app);
 	var io = require('socket.io')(http);
 	var mongoose = require('mongoose');
-	var port = process.env.PORT || 3000;
+	var port = process.env.PORT || 1234;
 
 	mongoose.connect('mongodb://localhost/activity', function(err){
 	    if (err) {
@@ -14,16 +14,13 @@
 	});
 
 	var actSchema = mongoose.Schema({
-	    type: String,
-	    class: Number,
-	    name: String,
-	    location: String,
-	    latitude: Number,
-	    longitude: Number,
 	    tags: String,
-	    starttime: {type: Date, default: Date.now},
-	    endtime: {type: Date, default: Date.now},
-	    description: String
+	    sub_type: Number,
+	    m_lat: Number,
+	    location: String,
+	    m_lon: Number,
+	    description: String,
+	    name: String
 	});
 
 	var actModel = mongoose.model('ActData', actSchema);
@@ -32,24 +29,34 @@
 	  res.sendFile(__dirname + '/index.html');
 	});
 
-	io.on('connection', function(socket){
-	  console.log('new user comes in!');
+	io.sockets.on('connection', function(socket){
+	  console.log('Connected! New user comes in.');
+
 	  socket.on('upload', function(data, callback){
 	  	console.log(data.type);
 	  	var newAct = new actModel({type:data.type, class:data.class});
 	  	newAct.save(function(err){
-	  		 if(err) throw err;
-	  		 io.emit('show message', ' Upload success!');
+	  		 var result_value = {"result": true};
+	  		 if(err) {
+	  		 	result_value = {"result": false};
+	  		 	throw err;
+	  		 }
+	  		 io.emit('upload_result', result_value);
 	  	});
 	  });
 
 	  socket.on('download', function(data, callback){
-	    actModel.find({longtitude: {$gt: data.longitude, $lt: data.longitude+10}, 
-	     	            latitude: {$gt: data.latitude, $lt: data.latitude+10}}, 
+	    actModel.find({longtitude: {$gt: data.longitude-1e-3, $lt: data.longitude+1e-3}, 
+	     	            latitude: {$gt: data.latitude-1e-3, $lt: data.latitude+1e-3}}, 
 	     	            function(err, docs){
-	     	              if (err) throw err;
-	     	              console.log('sending documents');
-	     	              socket.emit('download_act', docs);
+	     	              if (err) {
+	     	              	var result_value = {"num_result": 0};
+	     	              	socket.emit('download_data', result_value);
+	     	              	throw err;
+	     	              } else {
+	     	                console.log('sending documents');
+	     	                socket.emit('download_data', docs);
+	     	              }
 	                    });
 	  });
 
@@ -58,24 +65,3 @@
 	http.listen(port, function(){
 	  console.log('listening on *:' + port);
 	});
-=======
-var app = require('express')();
-var http = require('http').Server(app);
-var io = require('socket.io')(http);
-var port = process.env.PORT || 3000;
-
-app.get('/', function(req, res){
-  res.sendFile(__dirname + '/index.html');
-});
-
-io.on('connection', function(socket){
-  console.log('new user comes in!');
-  socket.on('chat message', function(msg){
-    io.emit('show message', msg+' back');
-  });
-});
-
-http.listen(port, function(){
-  console.log('listening on *:' + port);
-});
->>>>>>> parent of cd85a0a... Mongoose Connect

@@ -1,0 +1,13 @@
+{
+	"name": "mobile_computing_server",
+	"version": "0.0.1",
+	"author": "Benjamin Zhang",
+	"description": "Server part of mobile computing project",
+	"keywords": ["node.js", "socket.io", "javascript"],
+	"private": "true",
+	"dependencies": {
+		"socket.io": "1.1.0",
+		"mongoose": "latest",
+		"express": "latest"
+	}
+}

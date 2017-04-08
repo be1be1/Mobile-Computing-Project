@@ -134,10 +134,10 @@ public class InputActivity extends AppCompatActivity {
         bundle.putString("location", location.getText().toString());
         tPrint(location.getText().toString());
 
-        String tag_str = tags[0].getText().toString()+","
-                +tags[1].getText().toString()+","
-                +tags[2].getText().toString();
-        bundle.putString("tag", tag_str);
+        String tag_str = tags[0].getText().toString()+" ,"
+                +tags[1].getText().toString()+" ,"
+                +tags[2].getText().toString()+" ";
+        bundle.putString("tags", tag_str);
         tPrint(tag_str);
 
         String stime_str = stime.getText().toString();

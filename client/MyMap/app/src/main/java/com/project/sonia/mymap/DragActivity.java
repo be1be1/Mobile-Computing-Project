@@ -57,6 +57,8 @@ public class DragActivity extends AppCompatActivity
 
     SocketIO socket = null;
 
+    private int display_num = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,6 +98,9 @@ public class DragActivity extends AppCompatActivity
         pic[16] = R.drawable.marker_s_17;
         pic[17] = R.drawable.marker_s_18;
 
+        ionAni.start();
+        display_num = 0;
+
         FILE_NAME = getResources().getString(R.string.ip_file_name);
         ip_load();
 
@@ -103,6 +108,34 @@ public class DragActivity extends AppCompatActivity
                 Toast.LENGTH_LONG).show();
 
     }
+
+    Thread ionAni = new Thread() {
+        @Override
+        public void run() {
+            try {
+                while (!isInterrupted()) {
+                    Thread.sleep(1000);
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(display_num==1){
+                                display_num = 0;
+                                Toast.makeText(getApplicationContext(), "Succeed",
+                                        Toast.LENGTH_SHORT).show();
+                                quit_record(null);
+                            }
+                            if(display_num ==2){
+                                Toast.makeText(getApplicationContext(), "Failed",
+                                        Toast.LENGTH_SHORT).show();
+                                display_num = 0;
+                            }
+                        }
+                    });
+                }
+            } catch (InterruptedException e) {
+            }
+        }
+    };
 
     private void ip_load(){
         FILE_NAME = getResources().getString(R.string.ip_file_name);
@@ -132,56 +165,59 @@ public class DragActivity extends AppCompatActivity
         String host = ip_add;//"http://192.168.56.1:1234";
         try {
             socket = new SocketIO(host);
+
+
+            socket.connect(new IOCallback() {
+                @Override
+                public void onMessage(JSONObject json, IOAcknowledge ack) {
+                   tPrint("Server said(JSON): " + json);
+                }
+
+                @Override
+                public void onMessage(String data, IOAcknowledge ack) {
+                    tPrint("Server said(Str): " + data);
+                }
+
+                @Override
+                public void onError(SocketIOException socketIOException) {
+                    tPrint("an Error occured");
+                    socketIOException.printStackTrace();
+                }
+
+                @Override
+                public void onDisconnect() {
+                    System.out.println("Connection terminated.");
+                }
+
+                @Override
+                public void onConnect() {
+                    tPrint("Connection established");
+                }
+
+                @Override
+                public void on(String event, IOAcknowledge ack, Object... args) {
+                    tPrint("Server triggered event '" + event + "'");
+                    if (event.compareTo("upload_result") == 0) {
+                        JSONObject obj = (JSONObject) args[0];
+                        Boolean up_result;
+                        try {
+                            up_result = obj.getBoolean("result");
+                        } catch (JSONException e) {
+                            tPrint("Mal Result");
+                            up_result = false;
+                        }
+                        tPrint("Upload Result: "+up_result);
+                        if(up_result){
+                            display_num = 1;
+                        }else{
+                            display_num = 2;
+                        }
+                    }
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-
-        socket.connect(new IOCallback() {
-            @Override
-            public void onMessage(JSONObject json, IOAcknowledge ack) {
-               tPrint("Server said(JSON): " + json);
-            }
-
-            @Override
-            public void onMessage(String data, IOAcknowledge ack) {
-                tPrint("Server said(Str): " + data);
-            }
-
-            @Override
-            public void onError(SocketIOException socketIOException) {
-                tPrint("an Error occured");
-                socketIOException.printStackTrace();
-            }
-
-            @Override
-            public void onDisconnect() {
-                System.out.println("Connection terminated.");
-            }
-
-            @Override
-            public void onConnect() {
-                tPrint("Connection established");
-            }
-
-            @Override
-            public void on(String event, IOAcknowledge ack, Object... args) {
-                tPrint("Server triggered event '" + event + "'");
-                if (event.compareTo("upload_result") == 0) {
-                    JSONObject obj = (JSONObject) args[0];
-                    Boolean up_result;
-                    try {
-                        up_result = obj.getBoolean("result");
-                    } catch (JSONException e) {
-                        tPrint("Mal Result");
-                        up_result = false;
-                    }
-                    tPrint("Upload Result: "+up_result);
-                    if(up_result){
-                        quit_record(null);
-                    }
-                }
-            }
-        });
     }
 
     @Override
@@ -295,7 +331,7 @@ public class DragActivity extends AppCompatActivity
 
     public void share_record(View view){
         Toast.makeText(getApplicationContext(), "Uploading Records",
-                Toast.LENGTH_LONG).show();
+                Toast.LENGTH_SHORT).show();
 
         JSONObject obj = new JSONObject();
         try {
@@ -305,6 +341,7 @@ public class DragActivity extends AppCompatActivity
             obj.put("etime", etime);
             obj.put("name", name);
             obj.put("description", description);
+            tPrint(tags);
             obj.put("tags", tags);
             obj.put("location", location);
             obj.put("m_lat", m_lat);
@@ -318,8 +355,7 @@ public class DragActivity extends AppCompatActivity
     }
 
     public void quit_record(View view){
-
-        tPrint("not die yet");
+        ionAni.interrupt();
         socket.disconnect();
         Intent intent = new Intent(DragActivity.this, MainMenu.class);
         startActivity(intent);

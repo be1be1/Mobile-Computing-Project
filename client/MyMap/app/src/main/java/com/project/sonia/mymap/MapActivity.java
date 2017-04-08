@@ -82,6 +82,9 @@ public class MapActivity extends AppCompatActivity
     SocketIO socket = null;
     private boolean display_update = false;
 
+    private long time_now;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,67 +130,79 @@ public class MapActivity extends AppCompatActivity
         String host = ip_add;//"http://192.168.56.1:1234";
         try {
             socket = new SocketIO(host);
+
+
+            socket.connect(new IOCallback() {
+                @Override
+                public void onMessage(JSONObject json, IOAcknowledge ack) {
+                    tPrint("Server said(JSON): " + json);
+                }
+
+                @Override
+                public void onMessage(String data, IOAcknowledge ack) {
+                    tPrint("Server said(Str): " + data);
+                }
+
+                @Override
+                public void onError(SocketIOException socketIOException) {
+                    tPrint("an Error occured");
+                    socketIOException.printStackTrace();
+                }
+
+                @Override
+                public void onDisconnect() {
+                    System.out.println("Connection terminated.");
+                }
+
+                @Override
+                public void onConnect() {
+                    tPrint("Connection established");
+                }
+
+                @Override
+                public void on(String event, IOAcknowledge ack, Object... args) {
+                    tPrint("Server triggered event '" + event + "'");
+                    if(event.compareTo("download_data")==0){
+                        JSONObject obj = (JSONObject)args[0];
+                        try {
+
+                            num_result = obj.getInt("num_result");
+                            if(num_result==0) return;
+                            JSONArray datas = obj.getJSONArray("result_data");
+                            JSONObject tempd;
+
+                            for(int i=0;i<10;i++){
+                                tPrint("open: " + i);
+                                if(datas.isNull(i)){
+                                    num_result = i;
+                                    break;
+                                }
+                                if(i==9)
+                                    num_result = 10;
+
+                                tempd = (JSONObject) datas.get(i);
+                                tPrint("JSON: "+tempd);
+                                l_subtype[i] = tempd.getInt("sub_type");
+                                l_name[i] = tempd.getString("name");
+                                l_location[i] = tempd.getString("location");
+                                l_description[i] = tempd.getString("description");
+                                l_tags[i] = tempd.getString("tags");
+                                l_lat[i] = tempd.getDouble("m_lat");
+                                l_lon[i] = tempd.getDouble("m_lon");
+                            }
+                        } catch (JSONException e) {
+                            System.out.println("Mal Result");
+                            num_result = 0;
+                        }
+                        System.out.println(num_result);
+                        if(num_result!=0)
+                            display_update = true;
+                    }
+                }
+            });
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
-
-        socket.connect(new IOCallback() {
-            @Override
-            public void onMessage(JSONObject json, IOAcknowledge ack) {
-                tPrint("Server said(JSON): " + json);
-            }
-
-            @Override
-            public void onMessage(String data, IOAcknowledge ack) {
-                tPrint("Server said(Str): " + data);
-            }
-
-            @Override
-            public void onError(SocketIOException socketIOException) {
-                tPrint("an Error occured");
-                socketIOException.printStackTrace();
-            }
-
-            @Override
-            public void onDisconnect() {
-                System.out.println("Connection terminated.");
-            }
-
-            @Override
-            public void onConnect() {
-                tPrint("Connection established");
-            }
-
-            @Override
-            public void on(String event, IOAcknowledge ack, Object... args) {
-                tPrint("Server triggered event '" + event + "'");
-                if(event.compareTo("download_data")==0){
-                    JSONObject obj = (JSONObject)args[0];
-                    try {
-
-                        num_result = obj.getInt("num_result");
-                        JSONArray datas = obj.getJSONArray("result_data");
-                        JSONObject tempd;
-
-                        for(int i=0;i<num_result;i++){
-                            tempd = (JSONObject) datas.get(i);
-                            l_subtype[i] = tempd.getInt("sub_type");
-                            l_name[i] = tempd.getString("name");
-                            l_location[i] = tempd.getString("location");
-                            l_description[i] = tempd.getString("description");
-                            l_tags[i] = tempd.getString("tags");
-                            l_lat[i] = tempd.getDouble("m_lat");
-                            l_lon[i] = tempd.getDouble("m_lon");
-                        }
-                    } catch (JSONException e) {
-                        System.out.println("Mal Result");
-                        num_result = 0;
-                    }
-                    System.out.println(num_result);
-                    display_update = true;
-                }
-            }
-        });
     }
 
     private void data_init(){
@@ -374,7 +389,7 @@ public class MapActivity extends AppCompatActivity
         btnMenu.setVisibility(View.INVISIBLE);
         String[] tmp_tag = l_tags[i].split(",");
         for(int j=0;j<3;j++){
-            if(tmp_tag[j].compareTo("")==0){
+            if(tmp_tag[j].compareTo(" ")==0){
                 m_tag[j].setVisibility(View.INVISIBLE);
             }else{
                 m_tag[j].setVisibility(View.VISIBLE);
@@ -417,9 +432,13 @@ public class MapActivity extends AppCompatActivity
 
         JSONObject obj = new JSONObject();
         try {
+
+            time_now=System.currentTimeMillis();
             obj.put("type", type);
-            obj.put("tar_lat", pre_lat);
-            obj.put("tar_lon", pre_lon);
+            obj.put("m_lat", pre_lat);
+            obj.put("m_lon", pre_lon);
+            obj.put("ntime", time_now);
+            tPrint("Send: "+obj);
 
             socket.emit("download", obj);
         } catch (JSONException e) {
